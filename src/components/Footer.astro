@@ -2,24 +2,35 @@
 // Footer.astro
 import { Icon } from 'astro-icon/components';
 
+interface PhoneContact {
+  label: string;
+  number: string; // Display number (can include spaces)
+  tel: string; // E.164 or digits only for href="tel:"
+}
+
 interface Props {
   coupleNames?: string;
   weddingDate?: string;
   location?: string;
   contactEmail?: string;
+  phoneContacts?: PhoneContact[];
 }
 
 const {
   coupleNames = "Fernando & María",
-  weddingDate = "9 de mayo del 2026",
+  weddingDate = "9 de mayo de 2026",
   location = "Finca Siempreverde, Murcia",
-  contactEmail = " mariaferboda@gmail.com"
+  contactEmail = "mariaferboda@gmail.com",
+  phoneContacts = [
+    { label: "María", number: "+34 647 142 926", tel: "+34600000000" },
+    { label: "Fernando", number: "+34 628 403 550", tel: "+34611111111" },
+  ],
 } = Astro.props;
 ---
 
 <footer class="footer">
   <div class="footer__pattern"></div>
-  
+
   <div class="footer__container">
     <div class="footer__content">
       <!-- Names Section -->
@@ -47,13 +58,33 @@ const {
         <p class="footer__contact-text">
           Para cualquier consulta, contáctanos en
         </p>
-        <a
-          href={`mailto:${contactEmail}`}
-          class="footer__email"
-        >
-          <Icon name="lucide:mail" class="footer__email-icon" />
-          {contactEmail}
-        </a>
+
+        <div class="footer__contact-actions">
+          <a href={`mailto:${contactEmail}`} class="footer__email">
+            <Icon name="lucide:mail" class="footer__email-icon" />
+            {contactEmail}
+          </a>
+
+          {phoneContacts?.length > 0 && (
+            <div class="footer__phones" aria-label="Teléfonos de contacto">
+              {phoneContacts.map((phone) => (
+                <a
+                  class="footer__phone"
+                  href={`tel:${phone.tel}`}
+                  data-phone
+                >
+                  <span class="footer__phone-icon" aria-hidden="true">
+                    <Icon name="lucide:phone" class="footer__phone-svg" />
+                  </span>
+                  <span class="footer__phone-text">
+                    <span class="footer__phone-label">{phone.label}</span>
+                    <span class="footer__phone-number">{phone.number}</span>
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <!-- Hearts -->
@@ -70,6 +101,28 @@ const {
     </div>
   </div>
 </footer>
+
+<script>
+  if (typeof window !== 'undefined') {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const phoneLinks = document.querySelectorAll<HTMLAnchorElement>('[data-phone]');
+    phoneLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        if (prefersReducedMotion) return;
+
+        // Restart animation reliably
+        link.classList.remove('footer__phone--animate');
+        void link.offsetWidth;
+        link.classList.add('footer__phone--animate');
+
+        window.setTimeout(() => {
+          link.classList.remove('footer__phone--animate');
+        }, 900);
+      });
+    });
+  }
+</script>
 
 <style>
   .footer {
@@ -190,6 +243,13 @@ const {
     margin: 0;
   }
 
+  .footer__contact-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
   .footer__email {
     display: inline-flex;
     align-items: center;
@@ -207,7 +267,7 @@ const {
   }
 
   .footer__email:hover {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130,  246, 0.1);
     border-color: #3b82f6;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
@@ -216,6 +276,112 @@ const {
   .footer__email-icon {
     width: 1.125rem;
     height: 1.125rem;
+  }
+
+  /* Phones */
+  .footer__phones {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer__phone {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    border-radius: 9999px;
+    border: 2px solid rgba(59, 130, 246, 0.18);
+    background: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    color: #0f172a;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    outline: none;
+  }
+
+  .footer__phone:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.35);
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.18);
+  }
+
+  .footer__phone:focus-visible {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+  }
+
+  .footer__phone-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    flex-shrink: 0;
+  }
+
+  .footer__phone-svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .footer__phone-text {
+    display: grid;
+    text-align: left;
+    line-height: 1.15;
+  }
+
+  .footer__phone-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .footer__phone-number {
+    font-size: 0.95rem;
+    font-weight: 650;
+    color: #0f172a;
+  }
+
+  /* Click animation (ring + pulse) */
+  .footer__phone--animate .footer__phone-icon {
+    animation: phone-ring 650ms ease-in-out;
+  }
+
+  .footer__phone--animate::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    border: 2px solid rgba(59, 130, 246, 0.35);
+    animation: phone-pulse 900ms ease-out;
+    pointer-events: none;
+  }
+
+  @keyframes phone-ring {
+    0% { transform: rotate(0deg) scale(1); }
+    15% { transform: rotate(12deg) scale(1.05); }
+    30% { transform: rotate(-12deg) scale(1.05); }
+    45% { transform: rotate(10deg) scale(1.05); }
+    60% { transform: rotate(-10deg) scale(1.05); }
+    75% { transform: rotate(6deg) scale(1.03); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  @keyframes phone-pulse {
+    0% {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.08);
+    }
   }
 
   /* Hearts Section */
@@ -268,23 +434,29 @@ const {
   }
 
   @keyframes bounce {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-5px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
   }
 
   @keyframes heartbeat {
-    0%, 100% {
-      transform: scale(1);
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.1); }
+    50% { transform: scale(1); }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .footer__content,
+    .footer__emoji,
+    .footer__heart,
+    .footer__phone--animate .footer__phone-icon,
+    .footer__phone--animate::after {
+      animation: none !important;
     }
-    25% {
-      transform: scale(1.1);
-    }
-    50% {
-      transform: scale(1);
+    .footer__email,
+    .footer__phone,
+    .footer__info-item {
+      transition: none !important;
     }
   }
 
@@ -314,6 +486,20 @@ const {
     .footer__email {
       font-size: 0.85rem;
       padding: 0.65rem 1.25rem;
+    }
+
+    .footer__phones {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .footer__phone {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .footer__phone-text {
+      text-align: center;
     }
   }
 </style>
